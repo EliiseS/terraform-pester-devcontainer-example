@@ -16,10 +16,10 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
-            mkdir -p /tmp/docker-downloads
-            curl -sSL -o /tmp/docker-downloads/terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip 
-            unzip /tmp/docker-downloads/terraform.zip 
-            mv terraform /usr/local/bin
+            curl -L https://github.com/terraform-linters/tflint/releases/download/v0.17.0/tflint_linux_amd64.zip -o tflint.zip
+            unzip tflint.zip
+            rm tflint.zip
+            sudo mv tflint /usr/local/bin \
 
       - task: PowerShell@2
         displayName: Validate terraform

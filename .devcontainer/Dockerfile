@@ -9,8 +9,8 @@ FROM debian:buster-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Versions
-ARG TERRAFORM_VERSION=0.12.25
-ARG TFLINT_VERSION=0.15.3
+ARG TERRAFORM_VERSION=0.12.28
+ARG TFLINT_VERSION=0.17.0
 
 # Folder names
 ARG TERRAFORM_PROVIDER_AZUREDEVOPS_NAME=terraform-provider-azuredevops
@@ -29,7 +29,7 @@ RUN apt-get update \
     && unzip /tmp/docker-downloads/terraform.zip \
     && mv terraform /usr/local/bin \
     # Install tflint
-    && curl -sSL -o /tmp/docker-downloads/tflint.zip https://github.com/wata727/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip \
+    && curl -sSL -o /tmp/docker-downloads/tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip \
     && unzip /tmp/docker-downloads/tflint.zip \
     && mv tflint /usr/local/bin \
     # Clean up downloaded files
