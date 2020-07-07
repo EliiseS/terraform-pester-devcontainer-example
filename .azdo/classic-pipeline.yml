@@ -1,0 +1,53 @@
+variables:
+  - group: azdo-terraform
+
+jobs:
+  - job: ClassicPipeline
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - task: TerraformInstaller@0
+        displayName: 'Install terraform'
+        inputs:
+          terraformVersion: 0.12.25
+
+      - task: Bash@3
+        displayName: Install tflint
+        inputs:
+          targetType: 'inline'
+          script: |
+            mkdir -p /tmp/docker-downloads
+            curl -sSL -o /tmp/docker-downloads/terraform.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip 
+            unzip /tmp/docker-downloads/terraform.zip 
+            mv terraform /usr/local/bin
+
+      - task: PowerShell@2
+        displayName: Validate terraform
+        inputs:
+          targetType: 'inline'
+          script: |
+            terraform init
+            terraform validate
+            tflint
+
+      - task: PowerShell@2
+        displayName: Install Pester module
+        inputs:
+          targetType: 'inline'
+          script: Install-Module -Name Pester -Force -RequiredVersion 4.10.1
+
+      - task: PowerShell@2
+        displayName: Run tests
+        env:
+          AZURE_DEVOPS_EXT_PAT: $(AZDO_PERSONAL_ACCESS_TOKEN)
+          AZDO_PERSONAL_ACCESS_TOKEN: $(AZDO_PERSONAL_ACCESS_TOKEN)
+          AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL)
+        inputs:
+          targetType: 'inline'
+          script: Invoke-Pester -EnableExit
+
+      - task: PowerShell@2
+        displayName: Build devcontainer
+        inputs:
+          targetType: 'inline'
+          script: docker build -f .devcontainer/Dockerfile -t devcontainer .

@@ -1,0 +1,72 @@
+variables:
+  - group: azdo-terraform
+
+jobs:
+  - job: DevcontainerPipelineWithCaching
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      # Cache the docker image file
+      - task: Cache@2
+        inputs:
+          key: docker-image | .devcontainer/**
+          path: '.dockercache'
+          restoreKeys: docker-image
+          cacheHitVar: DOCKER_CACHE_HIT
+        displayName: Cache docker layers
+
+      - task: PowerShell@2
+        displayName: Load cached devcontainer image
+        condition: eq(variables.DOCKER_CACHE_HIT, 'true')
+        inputs:
+          targetType: 'inline'
+          script: docker load -i ./.dockercache/devcontainer.tar
+
+      - task: PowerShell@2
+        displayName: 'Build devcontainer'
+        inputs:
+          targetType: 'inline'
+          script: |
+            # Create dockercache directory
+            mkdir -p ./.dockercache/
+            docker build --cache-from devcontainer:latest -f .devcontainer/Dockerfile -t devcontainer .
+
+      - task: PowerShell@2
+        displayName: Save devcontainer image
+        condition: and(succeeded(), ne(variables.DOCKER_CACHE_HIT, 'true'))
+        inputs:
+          targetType: 'inline'
+          script: docker image save -o ./.dockercache/devcontainer.tar devcontainer
+
+      - task: PowerShell@2
+        displayName: Validate terraform
+        env:
+          AZDO_PERSONAL_ACCESS_TOKEN: $(AZDO_PERSONAL_ACCESS_TOKEN)
+          AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL)
+        inputs:
+          targetType: 'inline'
+          script: |
+            docker run `
+              --entrypoint /opt/microsoft/powershell/7/pwsh `
+              -v $(System.DefaultWorkingDirectory):/src `
+              --workdir /src `
+              devcontainer `
+              -c terraform init && terraform validate && tflint
+
+      - task: PowerShell@2
+        displayName: Run tests
+        env:
+          AZDO_PERSONAL_ACCESS_TOKEN: $(AZDO_PERSONAL_ACCESS_TOKEN)
+          AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL)
+        inputs:
+          targetType: 'inline'
+          script: |
+            docker run `
+              -e AZURE_DEVOPS_EXT_PAT=$(AZDO_PERSONAL_ACCESS_TOKEN)`
+              -e AZDO_PERSONAL_ACCESS_TOKEN=$(AZDO_PERSONAL_ACCESS_TOKEN) `
+              -e AZDO_ORG_SERVICE_URL=$(AZDO_ORG_SERVICE_URL) `
+              --entrypoint /opt/microsoft/powershell/7/pwsh `
+              -v $(System.DefaultWorkingDirectory):/src `
+              --workdir /src `
+              devcontainer `
+              -c Invoke-Pester -EnableExit

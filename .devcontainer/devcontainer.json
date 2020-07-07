@@ -1,0 +1,25 @@
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.106.0/containers/debian-10-git
+{
+  "name": "Debian 10 & Git",
+  "dockerFile": "Dockerfile",
+  // Set *default* container specific settings.json values on container create.
+  "settings": {
+    "terminal.integrated.shell.linux": "/opt/microsoft/powershell/7/pwsh",
+    "terraform.languageServer.enabled": true
+  },
+  // Add the IDs of extensions you want installed when the container is created.
+  "extensions": [
+    "hashicorp.terraform",
+    "yzhang.markdown-all-in-one",
+    "streetsidesoftware.code-spell-checker",
+    "ms-vsliveshare.vsliveshare-pack",
+    "ms-vscode.powershell",
+    "mikestead.dotenv",
+    "redhat.vscode-yaml"
+  ],
+  "runArgs": [
+    "--env-file",
+    ".env"
+  ]
+}
