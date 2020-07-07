@@ -7,17 +7,13 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
       - task: PowerShell@2
-        displayName: 'Build devcontainer'
+        displayName: Build devcontainer
         inputs:
           targetType: 'inline'
-          script: |
-            docker build -f .devcontainer/Dockerfile -t devcontainer .
+          script: docker build -f .devcontainer/Dockerfile -t devcontainer .
 
       - task: PowerShell@2
         displayName: Validate terraform
-        env:
-          AZDO_PERSONAL_ACCESS_TOKEN: $(AZDO_PERSONAL_ACCESS_TOKEN)
-          AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL)
         inputs:
           targetType: 'inline'
           script: |
@@ -26,7 +22,7 @@ jobs:
               -v $(System.DefaultWorkingDirectory):/src `
               --workdir /src `
               devcontainer `
-              -c terraform init && terraform validate && tflint
+              -c "terraform init && terraform validate && tflint"
 
       - task: PowerShell@2
         displayName: Run tests
@@ -37,7 +33,7 @@ jobs:
           targetType: 'inline'
           script: |
             docker run `
-              -e AZURE_DEVOPS_EXT_PAT=$(AZDO_PERSONAL_ACCESS_TOKEN)`
+              -e AZURE_DEVOPS_EXT_PAT=$(AZDO_PERSONAL_ACCESS_TOKEN) `
               -e AZDO_PERSONAL_ACCESS_TOKEN=$(AZDO_PERSONAL_ACCESS_TOKEN) `
               -e AZDO_ORG_SERVICE_URL=$(AZDO_ORG_SERVICE_URL) `
               --entrypoint /opt/microsoft/powershell/7/pwsh `
